@@ -1,7 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("comparti_go.db");
+// const db = new sqlite3.Database("comparti_go.db");
 const cors = require("cors");
 const mercadopago = require('mercadopago');
 const http = require('http');
@@ -12,83 +12,13 @@ app.use(cors());
 
 app.use(bodyParser.json());
 
-db.serialize(() => {
-  db.run(`
-      CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY,
-        tipo TEXT,
-        nombre TEXT,
-        apellido TEXT,
-        mail TEXT,
-        telefono TEXT,
-        dni TEXT,
-        pass TEXT
-      )
-    `);
-
-  db.run(`
-      CREATE TABLE IF NOT EXISTS viajes (
-        id INTEGER PRIMARY KEY,
-        origen TEXT,
-        destino TEXT,
-        fecha TEXT,
-        hora TEXT,
-        conductor_id INTEGER,
-        pasajeros TEXT,
-        costo REAL,
-        FOREIGN KEY(conductor_id) REFERENCES usuarios(id)
-      )
-    `);
-
-  db.run(`
-      CREATE TABLE IF NOT EXISTS vehiculos (
-        id INTEGER PRIMARY KEY,
-        marca TEXT,
-        modelo TEXT,
-        color TEXT,
-        patente TEXT,
-        capacidad_pasajeros INTEGER,
-        conductor_id INTEGER,
-        disponible BOOLEAN,
-        FOREIGN KEY(conductor_id) REFERENCES usuarios(id)
-      )
-    `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS asociaciones_viaje (
-      id INTEGER PRIMARY KEY,
-      id_viaje INTEGER,
-      id_conductor INTEGER,
-      id_pasajero INTEGER,
-      id_vehiculo INTEGER,
-      estado TEXT,
-      FOREIGN KEY (id_viaje) REFERENCES viajes (id),
-      FOREIGN KEY (id_conductor) REFERENCES usuarios (id),
-      FOREIGN KEY (id_pasajero) REFERENCES usuarios (id)
-      FOREIGN KEY (id_vehiculo) REFERENCES usuarios (id)
-
-      )
-   `);
-
-   db.run(`
-    CREATE TABLE IF NOT EXISTS tarjeta_usuario (
-      id INTEGER PRIMARY KEY,
-      numero TEXT,
-      codigo TEXT,
-      id_titular TEXT,
-      titular TEXT,
-      dni TEXT,
-      tipo TEXT,
-      FOREIGN KEY (id_titular) REFERENCES usuarios (id)
-    )
- `);
-
+const db = new sqlite3.Database('comparti_go.db', (err) => {
+  if (err) {
+    return console.error(err.message);
+  }
+  console.log('Conexión exitosa a la base de datos SQLite');
 });
 
-mercadopago.configure({
-  client_id: 'TEST-871f7725-125c-40f2-80ac-719ff9206561',
-  client_secret: 'TEST-561483075422671-091915-7265b924047e142ab84d36c9d5e16d9d-28871284'
-});
 
 // Ruta para crear un usuario (conductor o pasajero)
 app.post("/usuarios", (req, res) => {
