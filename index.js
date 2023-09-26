@@ -343,21 +343,16 @@ app.post('/asociar-viaje', (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-
-    // Actualizar la cantidad de lugares disponibles en el auto del conductor
-    const queryActualizarPlazas = `
-      UPDATE vehiculos
-      SET capacidad_pasajeros = capacidad_pasajeros - 1
-      WHERE id = ?;
-    `;
-    const valuesActualizarPlazas = [idVehiculo];
-
-    db.run(queryActualizarPlazas, valuesActualizarPlazas, (err) => {
+    const queryMail = `SELECT mail FROM usuarios WHERE id = ?`
+    const valueId = [idConductor];
+    db.get(queryMail, valueId, (err,row) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
-
+      const mailConductor = row.mail;
       res.json({ mensaje: 'Viaje asociado y plazas actualizadas con éxito' });
+      sendMail(mailConductor,'Alguien quiere viajar con vos. Por favor revisa tu viaje!' )
+
     });
   });
 });
@@ -444,7 +439,7 @@ app.delete('/viajes/:idViaje/pasajeros/:idPasajero', (req, res) => {
 //Ruta para actualizar el estado del viaje de un usuario (confirmado o no)
 app.put('/asociar-viaje', (req, res) => {
   const { estado, idViaje, idPasajero } = req.body;
-
+  const nombreConductor = '';
   // Asociar el viaje con el conductor y el pasajero
   const queryAsociacion = `
     UPDATE asociaciones_viaje
@@ -458,6 +453,32 @@ app.put('/asociar-viaje', (req, res) => {
       return res.status(500).json({ error: err.message });
     }
 
+    const queryDataConductor = `SELECT nombre, apellido FROM USUARIOS WHERE id IN (SELECT id_conductor FROM sociaciones_viaje WHERE id_viaje = ?)`
+    const valueIdViaje = [idViaje];
+    db.get(queryDataConductor, valueIdViaje, (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      else {
+        nombreConductor = row.nombre + ' ' + row.apellido;
+      }
+    })
+
+
+    const queryMail = `SELECT mail FROM usuarios WHERE id = ?`
+    const valueId = [idPasajero];
+    db.get(queryMail, valueId, (err,row) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      const mailUsuario = row.mail;
+      if (estado == 'confirmado') {
+        sendMail(mailUsuario,'Tu viaje ha sido confirmado! Ponte en contacto con ' + nombreConductor + ' para mas detalles')
+      }
+      if (estado == 'rechazado') {
+        sendMail(mailUsuario,'Tu viaje ha sido rechazado!' )
+      }
+    });
     res.json({ mensaje: 'Viaje actualizado' });
   });
 });
