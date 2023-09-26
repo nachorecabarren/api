@@ -5,6 +5,7 @@ const db = new sqlite3.Database("comparti_go.db");
 const cors = require("cors");
 const mercadopago = require('mercadopago');
 const http = require('http');
+const nodemailer = require('nodemailer');
 
 const app = express();
 app.use(cors());
@@ -125,6 +126,7 @@ app.post("/usuarios", (req, res) => {
       }
 
       res.json({ mensaje: 'Usuario registrado con éxito' });
+      sendMail(mail,'Usuario registrado con éxito' )
     });
   });
 
@@ -605,6 +607,33 @@ app.get("/ruta/:origen/:destino", (req, res) => {
   });
   req2.end();
 })
+
+
+function sendMail(to, text) {
+  // Configura el transporte
+  let transporter = nodemailer.createTransport({
+    service: 'hotmail',
+    auth: {
+        user: 'compartigoapp@hotmail.com', 
+        pass: 'VamoLocoVamo123'
+    }
+  });
+  
+  // Configura el contenido del correo
+  let mailOptions = {
+    from: 'compartigoapp@hotmail.com',
+    to: to,
+    subject: 'CompartiGo',
+    text: text
+  }
+  
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+        return console.log(error);
+    }
+    console.log('Correo enviado: ' + info.response);
+  });
+}
 
 const PORT = process.env.PORT || 3000;
 
